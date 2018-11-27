@@ -1,0 +1,29 @@
+{
+  "name": "domain-signaling",
+  "version": "1.0.0",
+  "description": "domain signaling",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syncluster/domain-signaling.git"
+  },
+  "keywords": [
+    "isomorphic",
+    "domain",
+    "driven",
+    "design",
+    "signaling"
+  ],
+  "author": "eduardo@syncluster.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/syncluster/domain-signaling/issues"
+  },
+  "homepage": "https://github.com/syncluster/domain-signaling#readme",
+  "dependencies": {
+    "lodash": "^4.17.11"
+  }
+}
