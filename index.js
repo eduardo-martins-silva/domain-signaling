@@ -40,6 +40,7 @@
         vm.loadcache = loadcache;
         vm.loadoption = loadoption;
         vm.loadrules = loadrules;
+        vm.resolve = resolve;
 
         function broadcast(eventName, cb) {
             return new Promise(function (resolve, reject) {
@@ -57,7 +58,7 @@
                 if (typeof cb === 'function') {
                     var resp = cb();
                     if (_.isUndefined(resp) || _.isNull(resp)) {
-                        reject("Call Back is undefined on loadoption");
+                        reject('Call Back is undefined on loadoption');
                     }
                     resolve(resp);
                 } else {
@@ -98,7 +99,7 @@
                     }
                 });
                 if (_.isEmpty(links) || links === '') {
-                    reject("No object to load()");
+                    reject('No object to load()');
                 }
             });
         }
@@ -129,7 +130,7 @@
                             resolve(value);
                         });
                     } else {
-                        reject("Could not loadrules - no rels for specified location");
+                        reject('Could not loadrules - no rels for specified location');
                     }
                 });
             });
@@ -141,7 +142,7 @@
                 if (typeof cb === 'function') {
                     var resp = cb(vm.lifecycle, rel);
                     if (_.isUndefined(resp)){
-                        reject("loadcache not defined");
+                        reject('loadcache not defined');
                     }
                     resolve(resp);
                 } else {
@@ -221,7 +222,7 @@
 
                                     });
                                 } else {
-                                    reject("eventObject.mapping is empty");
+                                    reject('eventObject.mapping is empty');
                                 }
                             });
 
@@ -235,7 +236,7 @@
 
                                 defer_get.then(function () {
                                     vm.settransition(switchEvent);
-                                    vm.broadcast("lifecycle_change", broadcastcb);
+                                    vm.broadcast('lifecycle_change', broadcastcb);
                                 });
                             });
                         });
@@ -259,7 +260,7 @@
 
                             defer_cache.then(function () {
                                 vm.settransition(switchEvent);
-                                vm.broadcast("lifecycle_change", broadcastcb);
+                                vm.broadcast('lifecycle_change', broadcastcb);
                             });
                         });
                         break;
@@ -277,7 +278,7 @@
 
                         defer_transform.then(function () {
                             vm.settransition(switchEvent);
-                            vm.broadcast("lifecycle_change", broadcastcb);
+                            vm.broadcast('lifecycle_change', broadcastcb);
                         });
                         break;
 
@@ -340,7 +341,7 @@
 
                                 defer_domain.then(function () {
                                     vm.settransition(switchEvent);
-                                    vm.broadcast("lifecycle_change", broadcastcb);
+                                    vm.broadcast('lifecycle_change', broadcastcb);
                                 });
                             });
                         });
@@ -389,7 +390,7 @@
 
                                 defer_domain.then(function () {
                                     vm.settransition(switchEvent);
-                                    vm.broadcast("lifecycle_change", broadcastcb);
+                                    vm.broadcast('lifecycle_change', broadcastcb);
                                 });
                             });
                         });
@@ -410,7 +411,7 @@
 
                         defer_delete.then(function () {
                             vm.settransition(switchEvent);
-                            vm.broadcast("lifecycle_change", broadcastcb);
+                            vm.broadcast('lifecycle_change', broadcastcb);
                         });
                         break;
 
@@ -428,7 +429,7 @@
 
                         defer_assign.then(function () {
                             vm.settransition(switchEvent);
-                            vm.broadcast("lifecycle_change", broadcastcb);
+                            vm.broadcast('lifecycle_change', broadcastcb);
                         });
                         break;
 
@@ -451,7 +452,7 @@
 
                         defer_deleteObject.then(function () {
                             vm.settransition(switchEvent);
-                            vm.broadcast("lifecycle_change", broadcastcb);
+                            vm.broadcast('lifecycle_change', broadcastcb);
                         });
                         break;
 
@@ -465,11 +466,32 @@
                                 resolve(vm.transitionEvent);
                             });
                             defer_if.then(function () {
-                                vm.broadcast("transition_change", broadcastcb);
+                                vm.broadcast('transition_change', broadcastcb);
                             });
                         } else {
                             vm.settransition(switchEvent);
-                            vm.broadcast("lifecycle_change", broadcastcb);
+                            vm.broadcast('lifecycle_change', broadcastcb);
+                        }
+
+                        break;
+
+                    case 'lt':
+                        eventObject = _.find(_.first(_.filter(vm.lifecycle.items.events, {rel: vm.lifecycle.option})).items, switchEvent)[switchEvent];
+
+                        var compare = !_.isEmpty(_.filter(vm.lifecycle.items[eventObject.name], function(val){
+                            return vm.resolve(val, _.first(eventObject.criteria).key) < _.first(eventObject.criteria).value;
+                        }));
+                        if (compare) {
+                            var defer_lt = new Promise(function (resolve, reject) {
+                                vm.transitionEvent = eventObject.transitionEvent;
+                                resolve(vm.transitionEvent);
+                            });
+                            defer_lt.then(function () {
+                                vm.broadcast('transition_change', broadcastcb);
+                            });
+                        } else {
+                            vm.settransition(switchEvent);
+                            vm.broadcast('lifecycle_change', broadcastcb);
                         }
 
                         break;
@@ -488,7 +510,7 @@
                 resolve(resp);
 
                 if (_.isUndefined(resp)){
-                    reject("loadpanel not defined");
+                    reject('loadpanel not defined');
                 }
 
             });
@@ -501,7 +523,7 @@
                 resolve(resp);
 
                 if (_.isUndefined(resp)){
-                    reject("applyverb not defined");
+                    reject('applyverb not defined');
                 }
 
             });
@@ -531,6 +553,16 @@
             if (_.last(event.split('$')).toLowerCase() === 'transition') {
                 vm.transitionEvent = null;
             }
+        }
+
+        function resolve(obj, path){
+            path = path.split('.');
+            var current = obj;
+            while(path.length) {
+                if(typeof current !== 'object') return undefined;
+                current = current[path.shift()];
+            }
+            return current;
         }
     }
 }());
