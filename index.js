@@ -4,6 +4,7 @@
 
     module.exports = function Signaling(
         principal,
+        results,
         location,
         rels,
         options,
@@ -17,16 +18,33 @@
 
         var vm = this;
         vm.principal = principal;
+        vm.results = results || {
+                pattern: '',
+                data: {
+                    items: []
+                },
+                event: ''
+            };
         vm.location = location;
         vm.rels = rels;
         vm.options = options;
-        vm.lifecycle = lifecycle;
+        vm.lifecycle = lifecycle || {
+                initEvent: '',
+                prevEvent: '',
+                startedEvent: '',
+                postEvent: '',
+                option: '',
+                param: [],
+                params: [],
+                items: {service: [], events: [], events_order: []}
+            };
         vm.events_order = events_order;
         vm.events = events;
         vm.transitionEvent = transitionEvent;
         vm.domainName = domainName;
         vm.userGroup = userGroup;
         vm.users = users;
+        vm.case = {lifecycle: {}, name: ''};
 
         //methods
         vm.broadcast  = broadcast;
@@ -72,6 +90,9 @@
                 if (!_.isEmpty(vm.principal) && _.isEmpty(vm.lifecycle.items.service)) {
                     vm.lifecycle.items.service = vm.principal;
                 }
+                if (_.isNull(vm.results) || vm.results.pattern === '') {
+                    reject("load results pattern error");
+                }
                 var links = _.first(vm.lifecycle.items.service) ? _.first(vm.lifecycle.items.service).links : '';
                 _.forEach(links, function (value) {
                     if (value.location === vm.location && value.verb === 'GET' && value.type === 'options' && value.group === vm.userGroup) {
@@ -86,9 +107,12 @@
                             null,
                             cb
                         ).then(function (results) {
-                            if (results && results.data && !_.isEmpty(results.data.items)) {
+                            var loadedResults = vm.resolve(results, vm.results.pattern);
+                            vm.results.data.items = loadedResults;
+                            vm.results.event = 'loadOptions';
+                            if (loadedResults && !_.isEmpty(loadedResults)) {
                                 if (_.isEmpty(_.filter(vm.rels, {rel: vm.location}))) {
-                                    var data = {options: results.data.items};
+                                    var data = {options: loadedResults};
                                     _.assign(data, value);
                                     vm.rels.push({rel: value.name, items: data});
 
@@ -208,14 +232,17 @@
                             eventObject.message,
                             verbcb
                         ).then(function (results) {
+                            var getResults = vm.resolve(results, !_.isUndefined(eventObject.results) && eventObject.results.pattern ? eventObject.results.pattern : vm.results.pattern);
+                            vm.results.data.items = getResults;
+                            vm.results.event = switchEvent;
                             var defer_mapping = new Promise(function (resolve, reject) {
                                 if (!_.isEmpty(eventObject.mapping)) {
                                     _.map(eventObject.mapping, function (mappings) {
                                         mapping = mappings;
                                         getOb = _.clone(mapping);
                                         _.map(_.zip(_.keys(mapping), _.values(mapping)), function (pair) {
-                                            if (!_.isUndefined(pair[1]) && !_.isNull(pair[1]) && !_.isUndefined(results.data.items) && results.data.items.length > 0) {
-                                                getOb[pair[0]] = _.first(results.data.items)[pair[1]];
+                                            if (!_.isUndefined(pair[1]) && !_.isNull(pair[1]) && !_.isUndefined(getResults) && getResults.length > 0) {
+                                                getOb[pair[0]] = _.first(getResults)[pair[1]];
                                             }
                                             resolve(pair);
                                         });
@@ -321,8 +348,11 @@
                             eventObject.message,
                             verbcb
                         ).then(function (results) {
+                            var newResults = vm.resolve(results, !_.isUndefined(eventObject.results) && eventObject.results.pattern ? eventObject.results.pattern : vm.results.pattern);
+                            vm.results.data.items = newResults;
+                            vm.results.event = switchEvent;
                             var defer_mapping_new = new Promise(function (resolve, reject) {
-                                _.map(results.data.items, function (serv) {
+                                _.map(newResults, function (serv) {
                                     _.map(eventObject.mapping, function (mappings) {
                                         arr.push(eventObject.keyvalue ? _.assign(vm.remap(mappings, serv), eventObject.keyvalue) : vm.remap(mappings, serv));
                                     });
@@ -365,8 +395,11 @@
                             eventObject.message,
                             verbcb
                         ).then(function (results) {
+                            var mergeResults = vm.resolve(results, !_.isUndefined(eventObject.results) && eventObject.results.pattern ? eventObject.results.pattern : vm.results.pattern);
+                            vm.results.data.items = mergeResults;
+                            vm.results.event = switchEvent;
                             var defer_mapping_assign = new Promise(function (resolve, reject) {
-                                _.map(results.data.items, function (serv) {
+                                _.map(mergeResults, function (serv) {
                                     _.map(eventObject.mapping, function (mappings) {
                                         arr_assign.push(eventObject.keyvalue ? _.assign(vm.remap(mappings, serv), eventObject.keyvalue) : vm.remap(mappings, serv));
                                     });
@@ -500,6 +533,9 @@
                         switchcb(vm.lifecycle, switchEvent);
                 }
 
+                vm.case.lifecycle = vm.lifecycle;
+                vm.case.name = switchEvent;
+
             }
         }
 
@@ -532,7 +568,7 @@
 
         function getcase()
         {
-
+            return vm.case;
         }
 
         function remap(mapping, value)
