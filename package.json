@@ -1,6 +1,6 @@
 {
   "name": "domain-signaling",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "domain signaling",
   "main": "index.js",
   "scripts": {
@@ -24,6 +24,6 @@
   },
   "homepage": "https://github.com/syncluster/domain-signaling#readme",
   "dependencies": {
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.21"
   }
 }
