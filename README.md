@@ -145,15 +145,15 @@ async function runWorkflow() {
 runWorkflow();
 ```
 ##Explanation
-###Configuration
+##Configuration
 **principal, results, location, rels, options, lifecycle, events_order, events, transitionEvent, domainName, userGroup, users**: These are the initial configurations for the state machine and signaling instance.
 **signaling**: This initializes the domain-signaling instance with the provided configurations.
-###Callbacks
+##Callbacks
 **switchCallback**: Manages the state transitions. It logs the current state and finds the next state from the events_order. If all transitions are completed, it stops further transitions.
 **loadPanelCallback, httpRequestCallback, loadCacheCallback, loadRulesCallback, broadcastCallback**: These are mocked callback functions that simulate various asynchronous operations required during state transitions.
-###Execution
+##Execution
 **runWorkflow**: This function initiates the state machine by calling signaling.execute with the necessary callbacks. The state transitions occur automatically through the broadcastCallback which triggers the switchCallback.
-###Running the Example
+##Running the Example
 To run this example, save the code in a file (e.g., workflow.js) and execute it using Node.js:
 ```shell script
 node workflow.js
